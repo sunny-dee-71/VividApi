@@ -110,7 +110,8 @@
     <input type="text" id="searchName" placeholder="Search by Name" />
     <input type="text" id="searchID" placeholder="Search by ID" />
     <input type="text" id="searchCosmetics" placeholder="Search by Cosmetics" />
-    <button id="toggleSort">Sort by Account Value</button>
+    <button id="toggleSort">Sort By Account Value</button>
+    <button id="sortByRecent">Sort By Recent)</button>
   </div>
   
   <table>
@@ -133,7 +134,8 @@
   <script>
     let playersData = [];
     let originalData = [];
-    let sortEnabled = false; // Track if sorting is enabled
+    let sortEnabled = false; // Track if sorting by account value is enabled
+    let recentSortEnabled = false; // Track if sorting by recent is enabled
 
     // Render table rows based on the filtered data
     function renderTable(data) {
@@ -211,12 +213,29 @@
         // Enable sort: sort by Account Value descending
         playersData.sort((a, b) => parseFloat(b.AccountValue) - parseFloat(a.AccountValue));
         sortEnabled = true;
-        button.textContent = "Sort by Account Value";
+        button.textContent = "Sort By Account Value";
       } else {
         // Disable sort: restore original order
         playersData = originalData.slice();
         sortEnabled = false;
-        button.textContent = "Sort by Account Value";
+        button.textContent = "Sort By Account Value";
+      }
+      filterData();
+    }
+
+    // Sort by Recent Codes: bottom to top (reverse the order of entries)
+    function sortByRecent() {
+      const button = document.getElementById('sortByRecent');
+      if (!recentSortEnabled) {
+        // Enable sorting by recent (reverse the order)
+        playersData.reverse();
+        recentSortEnabled = true;
+        button.textContent = "Sort By Recent";
+      } else {
+        // Disable sort: restore original order
+        playersData = originalData.slice();
+        recentSortEnabled = false;
+        button.textContent = "Sort By Recent";
       }
       filterData();
     }
@@ -226,8 +245,9 @@
     document.getElementById('searchID').addEventListener('input', filterData);
     document.getElementById('searchCosmetics').addEventListener('input', filterData);
 
-    // Attach event listener to toggle sort button
+    // Attach event listeners to sort buttons
     document.getElementById('toggleSort').addEventListener('click', toggleSort);
+    document.getElementById('sortByRecent').addEventListener('click', sortByRecent);
 
     // Fetch data from the provided link and render table
     fetch('http://vividclient.duckdns.org:6989/players')
