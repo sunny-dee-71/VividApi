@@ -1,86 +1,246 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Player Data</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        table, th, td {
-            border: 1px solid black;
-        }
-        th, td {
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Player Data</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 20px;
+    }
+    
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+      color: #bb86fc;
+    }
+    
+    .controls {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    
+    .controls input, .controls button {
+      margin: 5px;
+      padding: 8px 10px;
+      font-size: 0.85em;
+      border: 1px solid #2c2c2c;
+      border-radius: 4px;
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+    }
+    
+    .controls input {
+      width: 180px;
+    }
+    
+    .controls button {
+      background-color: #2c2c2c;
+      cursor: pointer;
+    }
+    
+    .controls button:hover {
+      background-color: #3c3c3c;
+    }
+    
+    /* Let table width adjust to content */
+    table {
+      width: auto;
+      margin: 0 auto;
+      border-collapse: separate;
+      border-spacing: 10px;
+      animation: fadeIn 0.8s ease-out;
+    }
+    
+    th, td {
+      padding: 6px 8px;
+      border: 1px solid #2c2c2c;
+      font-size: 0.75em;
+      white-space: nowrap;
+      border-radius: 4px;
+    }
+    
+    th {
+      background-color: #2c2c2c;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    td {
+      background-color: #1e1e1e;
+    }
+    
+    tr:nth-child(even) td {
+      background-color: #252525;
+    }
+    
+    /* Cosmetics cell styling */
+    .cosmetics-cell {
+      text-align: left;
+      white-space: normal;
+      line-height: 1.2;
+    }
+    
+    .cosmetics-cell .name {
+      font-size: 0.65em;
+      color: #aaa;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
 </head>
 <body>
-    <h1>Player Data</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>Nick</th>
-                <th>Account Value</th>
-                <th>Actor Number</th>
-                <th>Cosmetics</th>
-                <th>Cosmetic Names</th>
-            </tr>
-        </thead>
-        <tbody id="playerData">
-            <!-- Player data will be inserted here -->
-        </tbody>
-    </table>
+  <h1>Player Data</h1>
+  
+  <!-- Search and Sort Controls -->
+  <div class="controls">
+    <input type="text" id="searchName" placeholder="Search by Name" />
+    <input type="text" id="searchID" placeholder="Search by ID" />
+    <input type="text" id="searchCosmetics" placeholder="Search by Cosmetics" />
+    <button id="toggleSort">Sort by Account Value</button>
+  </div>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>Nick</th>
+        <th>ID</th>
+        <th>Account Value</th>
+        <th>Actor Number</th>
+        <th>Cosmetics</th>
+        <th>Recent Codes</th>
+        <th>Active Codes</th>
+      </tr>
+    </thead>
+    <tbody id="playerData">
+      <!-- Player data rows inserted here -->
+    </tbody>
+  </table>
 
-    <script>
-        // Fetch data from the provided link
-        fetch('http://vividclient.duckdns.org:6989/players')
-            .then(response => response.json())
-            .then(data => {
-                const playerDataElement = document.getElementById('playerData');
-                
-                data.forEach(player => {
-                    const row = document.createElement('tr');
+  <script>
+    let playersData = [];
+    let originalData = [];
+    let sortEnabled = false; // Track if sorting is enabled
 
-                    // Create table data for each field
-                    const nickCell = document.createElement('td');
-                    nickCell.textContent = player.Nick;
-                    row.appendChild(nickCell);
+    // Render table rows based on the filtered data
+    function renderTable(data) {
+      const playerDataElement = document.getElementById('playerData');
+      playerDataElement.innerHTML = ''; // Clear previous rows
 
-                    const accountValueCell = document.createElement('td');
-                    accountValueCell.textContent = player.AccountValue;
-                    row.appendChild(accountValueCell);
+      data.forEach(player => {
+        const row = document.createElement('tr');
+        
+        // Nick cell
+        const nickCell = document.createElement('td');
+        nickCell.textContent = player.Nick;
+        row.appendChild(nickCell);
 
-                    const actorNumberCell = document.createElement('td');
-                    actorNumberCell.textContent = player.ActorNumber;
-                    row.appendChild(actorNumberCell);
+        // ID cell
+        const idCell = document.createElement('td');
+        idCell.textContent = player.ID;
+        row.appendChild(idCell);
 
-                    const cosmeticsCell = document.createElement('td');
-                    cosmeticsCell.textContent = player.Cosmetics;
-                    row.appendChild(cosmeticsCell);
+        // Account Value cell with USD conversion in bracket
+        const accountValueCell = document.createElement('td');
+        let accountValue = parseFloat(player.AccountValue);
+        let usdValue = ((accountValue / 5000) * 20).toFixed(2);
+        accountValueCell.textContent = `${player.AccountValue} (USD: ${usdValue})`;
+        row.appendChild(accountValueCell);
 
-                    const cosmeticNamesCell = document.createElement('td');
-                    cosmeticNamesCell.textContent = player.CosmeticNames;
-                    row.appendChild(cosmeticNamesCell);
+        // Actor Number cell
+        const actorNumberCell = document.createElement('td');
+        actorNumberCell.textContent = player.ActorNumber;
+        row.appendChild(actorNumberCell);
 
-                    // Append the row to the table body
-                    playerDataElement.appendChild(row);
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching player data:', error);
-            });
-    </script>
+        // Cosmetics cell with swapped order: Cosmetic Names on top, Cosmetics below
+        const cosmeticsCell = document.createElement('td');
+        cosmeticsCell.className = 'cosmetics-cell';
+        cosmeticsCell.innerHTML = `<div>${player.CosmeticNames}</div>
+                                     <div class="name">${player.Cosmetics}</div>`;
+        row.appendChild(cosmeticsCell);
+
+        // Recent Codes cell
+        const recentCodesCell = document.createElement('td');
+        recentCodesCell.textContent = player.RecentCodes || '';
+        row.appendChild(recentCodesCell);
+
+        // Active Codes cell
+        const activeCodesCell = document.createElement('td');
+        activeCodesCell.textContent = player.ActiveCodes || '';
+        row.appendChild(activeCodesCell);
+
+        playerDataElement.appendChild(row);
+      });
+    }
+
+    // Filter data based on search inputs
+    function filterData() {
+      const nameQuery = document.getElementById('searchName').value.toLowerCase();
+      const idQuery = document.getElementById('searchID').value.toLowerCase();
+      const cosmeticsQuery = document.getElementById('searchCosmetics').value.toLowerCase();
+
+      const filtered = playersData.filter(player => {
+        const matchesName = player.Nick.toLowerCase().includes(nameQuery);
+        const matchesID = String(player.ID).toLowerCase().includes(idQuery);
+        // Check both cosmetics and cosmetic names for the cosmetics query
+        const cosmeticsText = (player.Cosmetics + ' ' + player.CosmeticNames).toLowerCase();
+        const matchesCosmetics = cosmeticsText.includes(cosmeticsQuery);
+        return matchesName && matchesID && matchesCosmetics;
+      });
+
+      renderTable(filtered);
+    }
+
+    // Toggle sorting by Account Value descending (highest to lowest) on/off
+    function toggleSort() {
+      const button = document.getElementById('toggleSort');
+      if (!sortEnabled) {
+        // Enable sort: sort by Account Value descending
+        playersData.sort((a, b) => parseFloat(b.AccountValue) - parseFloat(a.AccountValue));
+        sortEnabled = true;
+        button.textContent = "Sort by Account Value";
+      } else {
+        // Disable sort: restore original order
+        playersData = originalData.slice();
+        sortEnabled = false;
+        button.textContent = "Sort by Account Value";
+      }
+      filterData();
+    }
+
+    // Attach event listeners to search inputs
+    document.getElementById('searchName').addEventListener('input', filterData);
+    document.getElementById('searchID').addEventListener('input', filterData);
+    document.getElementById('searchCosmetics').addEventListener('input', filterData);
+
+    // Attach event listener to toggle sort button
+    document.getElementById('toggleSort').addEventListener('click', toggleSort);
+
+    // Fetch data from the provided link and render table
+    fetch('http://vividclient.duckdns.org:6989/players')
+      .then(response => response.json())
+      .then(data => {
+        playersData = data;
+        // Store the original data order
+        originalData = data.slice();
+        renderTable(playersData);
+      })
+      .catch(error => {
+        console.error('Error fetching player data:', error);
+      });
+  </script>
 </body>
 </html>
