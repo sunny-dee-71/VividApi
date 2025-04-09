@@ -250,7 +250,7 @@
     document.getElementById('sortByRecent').addEventListener('click', sortByRecent);
 
     // Fetch data from the provided link and render table
-    fetch('https://vividclient.duckdns.org:6989/players')
+    fetch('https://cors-anywhere.herokuapp.com/http://vividclient.duckdns.org:6989/players')
       .then(response => response.json())
       .then(data => {
         playersData = data;
